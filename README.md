@@ -13,6 +13,7 @@ C# class for use in Unity2D made to handle collision detection for a character c
 > Contains functionality to ignore all colliders on a layer within a range of object. This will allow the object to pass through specific objects. Will also re-enable collision with those objects once out of range.
 
 
+Rays start in the collider. In Unity go to Edit->Project Settings->Physics2D and make sure that Queries Start in Colliders is unchecked.
 Forward ray will be the ray in front of the collider relative to rigidbody.transform.localscale.x. If localscale.x == -1 then forward facing ray will be on the left side. This makes it easier to get the ray in front of the collider.
 
 Check setting will fall through to the next lower setting if the specified setting fails. This is for cases when the collider is on the edge of the ground. If setting is 3 (3 rays needed to be on slope) but the collider is hanging off the edge of a slope with no ground below, then setting will automatically fall to setting 2 then 1 if 2 fails.
