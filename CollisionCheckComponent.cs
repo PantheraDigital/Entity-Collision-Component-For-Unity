@@ -28,6 +28,7 @@ namespace EntityController2D
         }
 
 
+
         ColliderTypes m_colliderType = ColliderTypes.Collider2D;
 
         List<Collider2D> m_collisionIgnoredEntities = new List<Collider2D>();
@@ -90,38 +91,22 @@ namespace EntityController2D
             float trueLeftOffset = -(GetCollider2DSize().x / 2f) + 0.01f;
 
             if (m_isOnSlope && useRotation)
-            {
                 direction = rotation * Vector3.down;
 
-                m_centerSlopeCheck = (Vector3)m_rigidBody.position + (rotation * rayOffset);
 
-                if (m_rigidBody.transform.localScale.x >= 0)
-                {
-                    m_leftSlopeCheck = (Vector3)m_rigidBody.position + (rotation * new Vector3(rayOffset.x + trueLeftOffset, rayOffset.y, rayOffset.z));
-                    m_rightSlopeCheck = (Vector3)m_rigidBody.position + (rotation * new Vector3(rayOffset.x + trueRightOffset, rayOffset.y, rayOffset.z));
-                }
-                else
-                {
-                    m_leftSlopeCheck = (Vector3)m_rigidBody.position + (rotation * new Vector3(rayOffset.x + trueRightOffset, rayOffset.y, rayOffset.z));
-                    m_rightSlopeCheck = (Vector3)m_rigidBody.position + (rotation * new Vector3(rayOffset.x + trueLeftOffset, rayOffset.y, rayOffset.z));
-                }
+            m_centerSlopeCheck = GetMiddleCheckPosition(rayOffset);
+
+            if (m_rigidBody.transform.localScale.x >= 0)
+            {
+                m_leftSlopeCheck = GetMiddleCheckPosition(new Vector3(rayOffset.x + trueLeftOffset, rayOffset.y, rayOffset.z));
+                m_rightSlopeCheck = GetMiddleCheckPosition(new Vector3(rayOffset.x + trueRightOffset, rayOffset.y, rayOffset.z));
             }
             else
             {
-                m_centerSlopeCheck = (Vector3)m_rigidBody.position + rayOffset;
-
-                if (m_rigidBody.transform.localScale.x >= 0)
-                {
-                    m_leftSlopeCheck = (Vector3)m_rigidBody.position + new Vector3(rayOffset.x + trueLeftOffset, rayOffset.y, rayOffset.z);
-                    m_rightSlopeCheck = (Vector3)m_rigidBody.position + new Vector3(rayOffset.x + trueRightOffset, rayOffset.y, rayOffset.z);
-                }
-                else
-                {
-                    m_leftSlopeCheck = (Vector3)m_rigidBody.position + new Vector3(rayOffset.x + trueRightOffset, rayOffset.y, rayOffset.z);
-                    m_rightSlopeCheck = (Vector3)m_rigidBody.position + new Vector3(rayOffset.x + trueLeftOffset, rayOffset.y, rayOffset.z);
-                }
-
+                m_leftSlopeCheck = GetMiddleCheckPosition(new Vector3(rayOffset.x + trueRightOffset, rayOffset.y, rayOffset.z));
+                m_rightSlopeCheck = GetMiddleCheckPosition(new Vector3(rayOffset.x + trueLeftOffset, rayOffset.y, rayOffset.z));
             }
+
 
             //cast rays
             RaycastHit2D centerHit = Physics2D.Raycast(m_centerSlopeCheck, direction, checkDist, m_layers);
@@ -152,7 +137,7 @@ namespace EntityController2D
                 //Debug.DrawRay(m_leftSlopeCheck, Vector2.up, Color.red); 
                 //Debug.Log("Norm: " + GetAverageNormal() + " SlopeDownAngle: " + GetGroundAngle() + " IsOnSlope: " + IsOnSLope());
 
-                Debug.Log(GetGroundAngle(RaycastData.Back) + "  " + GetGroundAngle(RaycastData.Center) + "  " + GetGroundAngle(RaycastData.Forward));
+                //Debug.Log(GetGroundAngle(RaycastData.Back) + "  " + GetGroundAngle(RaycastData.Center) + "  " + GetGroundAngle(RaycastData.Forward));
             }
         }
 
@@ -254,6 +239,17 @@ namespace EntityController2D
         public Vector2 GetRaycastPos()
         {
             return m_centerSlopeCheck;
+        }
+
+        public bool IsOnEdge()
+        {
+            if (m_centerHit)
+            {
+                if (!m_frontHit || !m_backHit)
+                    return true;
+            }
+
+            return false;
         }
 
         public bool IsSlopePositive()
@@ -396,6 +392,9 @@ namespace EntityController2D
         public Vector2 GetLowerCheckPosition(float checkRadius, float checkOffset, Vector2 colliderSize, Vector2 colliderOffset)
         {
             Vector2 offset = new Vector2(colliderOffset.x, colliderOffset.y - (colliderSize.y * 0.5f) + (checkRadius * checkOffset));
+            if (m_rigidBody.transform.localScale.x < 0)
+                offset.x = -colliderOffset.x;
+
             if (m_isOnSlope)
                 offset = Quaternion.Euler(0f, 0f, m_rigidBody.rotation) * offset;
 
@@ -408,6 +407,9 @@ namespace EntityController2D
         public Vector2 GetUpperCheckPosition(float checkRadius, float checkOffset, Vector2 colliderSize, Vector2 colliderOffset)
         {
             Vector2 offset = new Vector2(colliderOffset.x, colliderOffset.y + (colliderSize.y * 0.5f) - (checkRadius * checkOffset));
+            if (m_rigidBody.transform.localScale.x < 0)
+                offset.x = -colliderOffset.x;
+
             if (m_isOnSlope)
                 offset = Quaternion.Euler(0f, 0f, m_rigidBody.rotation) * offset;
 
@@ -419,7 +421,13 @@ namespace EntityController2D
         }
         public Vector2 GetMiddleCheckPosition(Vector2 colliderOffset)
         {
-            return new Vector2(m_rigidBody.position.x, m_rigidBody.position.y + colliderOffset.y);
+            if (m_rigidBody.transform.localScale.x < 0)
+                colliderOffset.x *= -1;
+
+            if (m_isOnSlope)
+                colliderOffset = Quaternion.Euler(0f, 0f, m_rigidBody.rotation) * colliderOffset;
+
+            return m_rigidBody.position + colliderOffset;
         }
         public Vector2 GetMiddleCheckPosition()
         {
